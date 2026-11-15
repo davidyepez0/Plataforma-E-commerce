@@ -1,0 +1,57 @@
+volumes:
+  postgres_data:
+
+services:
+  traefik:
+    image: traefik:v3.7
+    container_name: traefik
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--providers.docker.exposedbydefault=false"
+      - "--log.level=INFO"
+      - "--log.format=json"
+      - "--accesslog=true"
+      - "--accesslog.format=json"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - backend
+  
+  db:
+    image: postgres:18.6
+    container_name: db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    networks:
+      - backend
+  # La base de datos no tiene seccion ports, por lo que nadie desde afuera puede acceder a ella, solo los servicios en la misma red.
+
+  user-service:
+    build: ./services/user-service
+    container_name: user-service
+    environment:
+      - USER_SERVICE_PORT=${USER_SERVICE_PORT}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.user-service.rule=Host(`localhost`) && PathPrefix(`/api/users`)"
+      - "traefik.http.services.user-service.loadbalancer.server.port=${USER_SERVICE_PORT}"
+      - "traefik.http.middlewares.user-service-stripprefix.stripprefix.prefixes=/api/users"
+      # Se crea un middleware para recortar el prefijo /api/users de las rutas, por lo tanto el microservicio en Node solo recibe /.
+      - "traefik.http.routers.user-service.middlewares=user-service-stripprefix@docker"
+      # Activa el middleware creado en la ruta del microservicio.
+      - "traefik.http.routers.user-service.entrypoints=web"
+    networks:
+      - backend
+
+networks:
+  backend:
