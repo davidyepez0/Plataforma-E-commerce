@@ -1,5 +1,5 @@
 volumes:
-  postgres_data:
+  postgres-data:
 
 services:
   traefik:
@@ -31,7 +31,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - postgres-data:/var/lib/postgresql
+      - ./services/user-service/src/db:/docker-entrypoint-initdb.d
     networks:
       - backend
   # La base de datos no tiene seccion ports, por lo que nadie desde afuera puede acceder a ella, solo los servicios en la misma red.
