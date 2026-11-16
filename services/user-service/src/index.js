@@ -1,16 +1,18 @@
+import dotenv from 'dotenv';
 import express from 'express';
-import { pool } from './config/db.js';
+import registerRoute from './routes/auth-routes.js';
+
+dotenv.config({ path : '../../../.env' });
 
 const app = express();
+app.use(express.json());
 const port = process.env.USER_SERVICE_PORT || 3000;
 
-app.get('/', (req, res) => {
-  res.json({status: "success", code: 200, message: "User service is running"});
-});
+app.use('/register', registerRoute);
 
-app.get('/health', (req, res) => {
-  res.json({status: "success", code: 200, message: "Server is running"});
-});
+// app.get('/health', (req, res) => {
+//   res.json({status: "success", code: 200, message: "Server is running"});
+// });
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);

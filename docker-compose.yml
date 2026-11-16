@@ -33,6 +33,8 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql
       - ./services/user-service/src/db:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
     networks:
       - backend
   # La base de datos no tiene seccion ports, por lo que nadie desde afuera puede acceder a ella, solo los servicios en la misma red.
@@ -42,6 +44,7 @@ services:
     container_name: user-service
     environment:
       - USER_SERVICE_PORT=${USER_SERVICE_PORT}
+      - DATABASE_URL=${DATABASE_URL}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.user-service.rule=Host(`localhost`) && PathPrefix(`/api/users`)"
@@ -51,6 +54,9 @@ services:
       - "traefik.http.routers.user-service.middlewares=user-service-stripprefix@docker"
       # Activa el middleware creado en la ruta del microservicio.
       - "traefik.http.routers.user-service.entrypoints=web"
+    ports:
+      - "3000:3000"
+      # Para probar en local si funcionan algunos endpoints del microservicio, se expone el puerto 3000, pero en producción no es necesario.
     networks:
       - backend
 
