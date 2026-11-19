@@ -5,12 +5,12 @@ async function register(req, res, next) {
     try {
         const { username, email, password } = req.body;
         if (!username || !email || !password || username.trim() === '' || email.trim() === '' || password.trim() === '') {
-            return res.status(400).json({ message: 'All fields are required'});
+            return res.status(400).json({ success: false, message: 'All fields are required'});
         }
 
         const emailCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
         if (emailCheck.rows.length > 0) {
-            return res.status(409).json({ message: 'Email already exists' });
+            return res.status(409).json({ success: false, message: 'Email already exists' });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -21,9 +21,9 @@ async function register(req, res, next) {
 
         const { id, nombre, fecha_registro } = newUser.rows[0];
 
-        res.status(201).json({ message: 'User created successfully', user: {id, email, nombre, fecha_registro } });
+        res.status(201).json({ success: true, message: 'User created successfully', user: {id, email, nombre, fecha_registro } });
     }catch (error) {
-        next(error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
 
