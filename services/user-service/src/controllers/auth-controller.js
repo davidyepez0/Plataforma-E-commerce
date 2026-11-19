@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import pool from '../config/db.js';
 
-async function register(req, res, next) {
+async function register(req, res) {
     try {
         const { username, email, password } = req.body;
         if (!username || !email || !password || username.trim() === '' || email.trim() === '' || password.trim() === '') {
@@ -23,8 +23,37 @@ async function register(req, res, next) {
 
         res.status(201).json({ success: true, message: 'User created successfully', user: {id, email, nombre, fecha_registro } });
     }catch (error) {
+        console.error(error);
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
 
-export default register;
+async function login(req, res) {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password || email.trim() === '' || password.trim() === '') {
+            return res.status(400).json({ success: false, message: 'All fields are required'});
+        }
+
+        const user = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        
+        if (user.rows.length === 0) {
+            return res.status(401).json({ success: false, message: 'Invalid email or password' });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.rows[0].contraseña);
+
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'Invalid email or password' });
+        }
+
+        // Aqui va el codigo de firmar el JWT para devolverlo
+
+        res.status(200).json({ success: true, message: 'Login successful' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+
+export { register, login };
