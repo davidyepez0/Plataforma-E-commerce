@@ -1,5 +1,9 @@
+import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
 import pool from '../config/db.js';
+import jwt from 'jsonwebtoken';
+
+dotenv.config({ path : '../../../../.env' });
 
 async function register(req, res) {
     try {
@@ -47,9 +51,9 @@ async function login(req, res) {
             return res.status(401).json({ success: false, message: 'Invalid email or password' });
         }
 
-        // Aqui va el codigo de firmar el JWT para devolverlo
-
-        res.status(200).json({ success: true, message: 'Login successful' });
+        const token = jwt.sign({ id: user.rows[0].id, email: user.rows[0].email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        return res.status(200).json({ success: true, message: 'Login successful', token: token });
+        
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: 'Internal server error' });
