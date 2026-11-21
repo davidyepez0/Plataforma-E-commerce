@@ -12,7 +12,7 @@ async function register(req, res) {
             return res.status(400).json({ success: false, message: 'All fields are required'});
         }
 
-        const emailCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const emailCheck = await pool.query('SELECT email FROM users WHERE email = $1 LIMIT 1', [email]);
         if (emailCheck.rows.length > 0) {
             return res.status(409).json({ success: false, message: 'Email already exists' });
         }
@@ -39,7 +39,7 @@ async function login(req, res) {
             return res.status(400).json({ success: false, message: 'All fields are required'});
         }
 
-        const user = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const user = await pool.query('SELECT id, contraseña, email, nombre FROM users WHERE email = $1 LIMIT 1', [email]);
         
         if (user.rows.length === 0) {
             return res.status(401).json({ success: false, message: 'Invalid email or password' });
@@ -51,7 +51,7 @@ async function login(req, res) {
             return res.status(401).json({ success: false, message: 'Invalid email or password' });
         }
 
-        const token = jwt.sign({ id: user.rows[0].id, email: user.rows[0].email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ id: user.rows[0].id, email: user.rows[0].email, username: user.rows[0].nombre }, process.env.JWT_SECRET, { expiresIn: '1h' });
         return res.status(200).json({ success: true, message: 'Login successful', token: token });
         
     } catch (error) {
