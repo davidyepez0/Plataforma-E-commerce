@@ -19,7 +19,7 @@ async function register(req, res) {
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = await pool.query(
-            'INSERT INTO users (email, contraseña, nombre) VALUES ($1, $2, $3) RETURNING *',
+            'INSERT INTO users (email, contraseña, nombre) VALUES ($1, $2, $3) RETURNING id, nombre, email, fecha_creacion',
             [email, hashedPassword, username]
         );
 
@@ -51,7 +51,7 @@ async function login(req, res) {
             return res.status(401).json({ success: false, message: 'Invalid email or password' });
         }
 
-        const token = jwt.sign({ id: user.rows[0].id, email: user.rows[0].email, username: user.rows[0].nombre }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ id: user.rows[0].id }, process.env.JWT_SECRET, { expiresIn: '1h' });
         return res.status(200).json({ success: true, message: 'Login successful', token: token });
         
     } catch (error) {
@@ -60,4 +60,20 @@ async function login(req, res) {
     }
 };
 
-export { register, login };
+async function getMe (req, res) {
+    try {
+        const idUser = req.id;
+        const user = await pool.query('SELECT id, nombre, email, fecha_creacion FROM users WHERE id = $1', [idUser]);
+        if (user.rows[0] == 0) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+        
+        return res.status(200).json({ success: true, user: user.rows[0] });
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({ success: false, message: "Internal server error" })
+    }
+};
+
+export { register, login, getMe };
