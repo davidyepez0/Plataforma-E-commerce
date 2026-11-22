@@ -64,16 +64,39 @@ async function getMe (req, res) {
     try {
         const idUser = req.id;
         const user = await pool.query('SELECT id, nombre, email, fecha_creacion FROM users WHERE id = $1', [idUser]);
-        if (user.rows[0] == 0) {
+        if (!user.rows[0]) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
         
-        return res.status(200).json({ success: true, user: user.rows[0] });
+        return res.status(200).json({ success: true, message: 'Authenticated user', user: user.rows[0] });
 
     } catch (error) {
         console.log(error)
-        return res.status(500).json({ success: false, message: "Internal server error" })
+        return res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
 
-export { register, login, getMe };
+async function putMe (req, res) {
+    try {
+        const idUser = req.id;
+        const { username } = req.body;
+
+        if (!username || username.trim() === '') {
+             return res.status(400).json({ success: false, message: 'Username is required' }); 
+        }
+
+        const updateUser = await pool.query ('UPDATE users SET nombre = $1 WHERE id = $2 RETURNING id, nombre, email, fecha_creacion', [username, idUser]); 
+
+        if (!updateUser.rows[0]) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        return res.status(200).json({ success: true, message: 'Updated information', user: updateUser.rows[0] });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+
+export { register, login, getMe, putMe };
