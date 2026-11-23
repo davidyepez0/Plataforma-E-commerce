@@ -19,7 +19,7 @@ async function register(req, res) {
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = await pool.query(
-            'INSERT INTO users (email, contraseña, nombre) VALUES ($1, $2, $3) RETURNING id, nombre, email, fecha_creacion',
+            'INSERT INTO users (email, contrasena, nombre) VALUES ($1, $2, $3) RETURNING id, nombre, email, fecha_creacion',
             [email, hashedPassword, username]
         );
 
@@ -39,13 +39,13 @@ async function login(req, res) {
             return res.status(400).json({ success: false, message: 'All fields are required'});
         }
 
-        const user = await pool.query('SELECT id, contraseña, email, nombre FROM users WHERE email = $1 LIMIT 1', [email]);
+        const user = await pool.query('SELECT id, contrasena, email, nombre FROM users WHERE email = $1 LIMIT 1', [email]);
         
         if (user.rows.length === 0) {
             return res.status(401).json({ success: false, message: 'Invalid email or password' });
         }
 
-        const isMatch = await bcrypt.compare(password, user.rows[0].contraseña);
+        const isMatch = await bcrypt.compare(password, user.rows[0].contrasena);
 
         if (!isMatch) {
             return res.status(401).json({ success: false, message: 'Invalid email or password' });
